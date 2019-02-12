@@ -1,0 +1,292 @@
+globals [ max-sheep max-weight]  ; don't let sheep population grow too large
+; Sheep and wolves are both breeds of turtle.
+breed [ sheep a-sheep ]  ; sheep is its own plural, so we use "a-sheep" as the singular.
+breed [ wolves dragon ]
+breed [tree a-tree]
+fish-own[ energy ]
+breed [fish a-fish]
+breed [cow a-cow ]
+cow-own[ energy ]
+wolves-own [weight calories_cost calories_eat basic_calories]
+sheep-own [ energy ]       ; both wolves and sheep have energy
+patches-own [ countdown ]
+
+to setup
+  clear-all
+  set max-weight 500
+  set max-sheep ceiling (area / 5)
+  setup-patches
+  
+  create-cow initial-number-sheep
+  [
+    set shape "cow"
+    set color yellow
+    set size 1.5
+    set label-color yellow
+    set energy random (2 * sheep-gain-from-food)
+    setxy random-xcor random-ycor
+  ]
+  
+  create-fish 2
+  [
+    set shape "fish"
+    set color 75
+    set size 1.5
+    set label-color yellow
+    set energy random(2 * 10)
+    setxy 1.5 0
+  ]
+  create-tree 20[
+    set shape "tree"
+    set color 70
+    set size 3
+    setxy random-xcor random-ycor]
+  
+  create-sheep initial-number-sheep  ; create the sheep, then initialize their variables
+  [
+    set shape  "sheep"
+    set color white
+    set size 1.5  ; easier to see
+    set label-color blue - 2
+    set energy random (2 * sheep-gain-from-food)
+    setxy random-xcor random-ycor
+  ]
+  
+
+  create-wolves 3; create the wolves, then initialize their variables
+  [
+    set shape "wolf"
+    set color black
+    set size 2  ; easier to see
+    set weight 10
+    setxy random-xcor random-ycor
+  ]
+  display-labels
+  reset-ticks
+end
+
+to setup-patches
+      ask patches [
+      set pcolor one-of [ green ]
+      ifelse pcolor = green
+        [ set countdown (2000 - area)  ]
+    [if pcolor = 75 [set countdown (2000 - area * 1.2)]] ; initialize grass regrowth clocks randomly for brown patches
+  ]
+  
+  ask patches [ 
+    if ((pxcor = 0 and pycor = 0)or(pxcor = 1 and pycor = 0)or(pxcor = 2 and pycor = 0)or(pxcor = 0 and pycor = 1)or(pxcor = 1 and pycor = 1)or(pxcor = 2 and pycor = 1)or(pxcor = 0 and pycor = -1)or(pxcor = 1 and pycor = -1)or(pxcor = 2 and pycor = -1)or(pxcor = 0 and pycor = -2)or(pxcor = 1 and pycor = -2)or(pxcor = 2 and pycor = -2))
+    [set pcolor blue] 
+]
+  
+end
+
+to go
+  ; stop the simulation of no wolves or sheep
+  if not any? turtles [ stop ]
+  ; stop the model if there are no wolves and the number of sheep gets very large
+  
+  ask cow [
+    move; in this version, sheep eat grass, grass grows and it costs sheep energy to move
+    set energy energy - 1  ; deduct energy for sheep only if running sheep-wolf-grass model version
+    eat-grass  ; sheep eat grass only if running sheep-wolf-grass model version
+    death ; sheep die from starvation only if running sheep-wolf-grass model version
+    reproduce-cow  ; sheep reproduce at random rate governed by slider
+  ]
+  ask sheep [
+    move; in this version, sheep eat grass, grass grows and it costs sheep energy to move
+    set energy energy - 1  ; deduct energy for sheep only if running sheep-wolf-grass model version
+    eat-grass  ; sheep eat grass only if running sheep-wolf-grass model version
+    death ; sheep die from starvation only if running sheep-wolf-grass model version
+    reproduce-sheep  ; sheep reproduce at random rate governed by slider
+  ]
+  ask wolves [
+    set calories_cost 0
+    set calories_eat 0
+    cal_basic_calories
+    dragon-fire  ; wolves lose energy as they move
+    eat-sheep ; wolves eat a sheep on their patch
+    cal_weight
+    dead ; wolves die if our of energy ; wolves reproduce at random rate governed by slider
+  ]
+  ask patches [ grow-grass ]
+  ; set grass count patches with [pcolor = green]
+  tick
+  display-labels
+end
+
+to dead
+  if weight < 10[
+    print weight
+    print 0980809809809809
+    user-message "The dragon dead " stop
+  ]
+end
+
+to cal_weight
+  let temp calories_cost - calories_eat
+  let delta abs(temp) / 150
+  if delta > 40[ set delta 40]
+  ifelse temp > 0
+  [print 999 
+    set weight weight - abs(temp)/ 150 
+    if weight < 40[
+      set size 2
+    ]
+  ]
+  [
+    ifelse (weight + abs(temp)/ 150) < max-weight[
+      set weight weight + abs(temp)/ 150
+      if weight > 40[
+        set size 6
+      ]
+    ]
+    [
+      set weight max-weight
+    ]
+    
+  ]
+end
+
+to cal_basic_calories
+  set calories_cost  (9.3848 * weight + 21.22376 * tempreture + 290.4291)
+  set basic_calories calories_cost
+end
+
+to dragon-fire
+  if weight > 30[
+  if random 100 < 1[
+    print 213123123123
+    set calories_cost calories_cost + (weight * 2)
+  ]
+  ]
+  print calories_cost
+end
+
+to move  ; turtle procedure
+  rt random 50
+  lt random 50
+  fd 1
+end
+
+to eat-grass  ; sheep procedure
+  ; sheep eat grass, turn the patch brown
+  if pcolor = green [
+    set pcolor brown
+    set energy energy + sheep-gain-from-food  ; sheep gain energy by eating
+  ]
+end
+
+to reproduce-sheep  ; sheep procedure
+  if max-sheep > count sheep[
+  if random-float 100 < sheep-reproduce [  ; throw "dice" to see if you will reproduce
+    set energy (energy / 2)                ; divide energy between parent and offspring
+    hatch 1 [ rt random-float 360 fd 1 ]   ; hatch an offspring and move it forward 1 step
+  ]]
+end
+to reproduce-cow  ; sheep procedure
+  if max-sheep > count cow[
+  if random-float 100 < sheep-reproduce [  ; throw "dice" to see if you will reproduce
+    set energy (energy / 2)                ; divide energy between parent and offspring
+    hatch 1 [ rt random-float 360 fd 1 ]   ; hatch an offspring and move it forward 1 step
+  ]]
+end
+
+
+to eat-sheep  ; wolf procedure
+  let a random 5
+  let judge 1 
+  print 321
+  while [(a > 0 or (calories_cost >= calories_eat)) and judge = 1][
+    ifelse random 2 = 1[
+    let prey one-of sheep  ; grab a random sheep
+    ifelse prey != nobody  [
+      print 99999999999999
+     move 
+      ; did we get one?  if so,
+      let temp  distance prey 
+      let ene  [energy] of prey 
+      ask prey [ die ]                            ; kill it, and...
+      set calories_eat calories_eat  + wolf-gain-from-food * 0.9 * ene / 105     ; get energy from eating
+      set calories_cost calories_cost + weight * 0.1 * temp
+      set a a - 1
+    ]
+      [let prey1 one-of cow  
+        ; grab a random sheep
+        ifelse prey1 != nobody  [
+          print 99999999999999
+          move 
+          ; did we get one?  if so,
+          let temp1  distance prey1 
+          let ene1  [energy] of prey1
+          ask prey1 [ die ]                            ; kill it, and...
+          set calories_eat calories_eat  + 3500 * 0.9 * ene1 / 110     ; get energy from eating
+          set calories_cost calories_cost + weight * 0.1 * temp1
+          set a a - 1
+          ][set judge  0]]]
+    [
+      let prey2 one-of cow  
+    ; grab a random sheep
+    ifelse prey2 != nobody  [
+      print 99999999999999
+     move 
+      ; did we get one?  if so,
+      let temp2  distance prey2 
+      let ene2  [energy] of prey2 
+      ask prey2 [ die ]                            ; kill it, and...
+      set calories_eat calories_eat  + 3500 * 0.9 * ene2 / 110     ; get energy from eating
+      set calories_cost calories_cost + weight * 0.1 * temp2
+      set a a - 1
+    ]
+      [let prey3 one-of sheep  
+    ; grab a random sheep
+    print prey3
+    print 123
+    ifelse prey3 != nobody  [
+      print 99999999999999
+     move 
+      ; did we get one?  if so,
+      let temp3  distance prey3 
+      let ene3  [energy] of prey3 
+      ask prey3 [ die ]                            ; kill it, and...
+      set calories_eat calories_eat  + wolf-gain-from-food * 0.9 * ene3 / 105     ; get energy from eating
+      set calories_cost calories_cost + weight * 0.1 * temp3
+      set a a - 1][set judge  0]]
+  ]
+  ]
+  
+  print 321
+end
+
+to death  ; turtle procedure (i.e. both wolf nd sheep procedure)
+  ; when energy dips below zero, die
+  if energy < 0 [ die ]
+end
+
+to grow-grass  ; patch procedure
+  ; countdown on brown patches: if reach 0, grow some grass
+  if pcolor = brown [
+    ifelse countdown <= 0
+      [ set pcolor green
+        set countdown (1000 - area) ]
+      [ set countdown countdown - 1 ]
+  ]
+end
+
+to-report grass
+  report patches with [pcolor = green]
+end
+
+
+to display-labels
+  ask turtles [ set label "" ]
+  ask wolves [ set label round weight ]
+  ask sheep [ set label round energy ] 
+end
+
+
+; Copyright 1997 Uri Wilensky.
+; See Info tab for full copyright and license.
+
+
+17 19 20.7 17.6  19.5 23.7 21.5 16.7  18.7 12.4
+10 12.6 13.4 14.5 15.4 17.6 18.7 21.6 22.8 25.8
