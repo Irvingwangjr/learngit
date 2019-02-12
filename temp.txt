@@ -283,7 +283,7 @@ to display-labels
   ask sheep [ set label round energy ] 
 end
 
-
+我恨你
 ; Copyright 1997 Uri Wilensky.
 ; See Info tab for full copyright and license.
 
