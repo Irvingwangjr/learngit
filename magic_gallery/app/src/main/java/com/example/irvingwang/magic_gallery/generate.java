@@ -1,10 +1,15 @@
 package com.example.irvingwang.magic_gallery;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.icu.text.SimpleDateFormat;
+import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabItem;
@@ -20,12 +25,14 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.EventListener;
 
 import static android.widget.Toast.LENGTH_SHORT;
@@ -34,6 +41,10 @@ import static android.widget.Toast.makeText;
 public class generate extends AppCompatActivity {
     //add client class
     private static final String TAG = "generate";
+    public  static  final int PICTURE_SAVED = 1;
+
+    ProgressDialog progressDialog;
+
     ImageClient Client;
     int mode=0;
     FloatingActionButton left;
@@ -107,8 +118,6 @@ public class generate extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 save_image();
-                Intent intent=new Intent(generate.this,camera.class);
-                startActivity(intent);
             }
         });
         for (int i=0;i<=type_list.length-1;i++){
@@ -169,34 +178,71 @@ public class generate extends AppCompatActivity {
         });
     }
 
+
+    private Handler handler=new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what){
+                case PICTURE_SAVED:
+                    progressDialog.dismiss();
+                    Intent intent=new Intent(generate.this,camera.class);
+                    startActivity(intent);
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
+
+    String currentPhotoPath;
     private void save_image(){
-        pic.setDrawingCacheEnabled(true);
-        Bitmap b = pic.getDrawingCache();
-        MediaStore.Images.Media.insertImage(getContentResolver(), b, "title", "description");
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    File save_file=createImageFile();
+                    FileOutputStream fos = new FileOutputStream(save_file);
+                    //通过io流的方式来压缩保存图片
+                    boolean isSuccess = cropped.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                    fos.flush();
+                    fos.close();
+                    Message message= new Message();
+                    message.what=PICTURE_SAVED;
+                    Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                    Uri contentUri = Uri.fromFile(save_file);
+                    mediaScanIntent.setData(contentUri);
+                    sendBroadcast(mediaScanIntent);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        progressDialog=new ProgressDialog(generate.this);
+        progressDialog.setTitle("saveing the picture");
+        progressDialog.setMessage("saving....");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
     }
 
-    public File getDir(String album){
-        File file=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),album);
-        if(!file.mkdirs()){
-            Log.e(TAG, "getDir:");
-        }
-        return file;
-    }
 
-    public boolean iswritable(){
-        String state=Environment.getExternalStorageState();
-        if(Environment.MEDIA_MOUNTED.equals(state)){
-            return true;
-        }
-        return false;
-    }
 
-    public boolean isReadable(){
-        String state=Environment.getExternalStorageState();
-        if(Environment.MEDIA_MOUNTED.equals(state)||Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)){
-            return true;
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         }
-        return false;
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        // Save a file: path for use with ACTION_VIEW intents
+        currentPhotoPath = image.getAbsolutePath();
+        return image;
     }
 
     public void onSingleTap(MotionEvent e) {
@@ -230,4 +276,5 @@ public class generate extends AppCompatActivity {
             }
         });
     }
+
 }
