@@ -120,6 +120,7 @@ public class camera extends AppCompatActivity{
                     // 获取图片
                     try {
                         //该uri是上一个Activity返回的
+                        /*
                         Uri imageUri = data.getData();
                         if(imageUri!=null) {
                             mcamera.release();
@@ -127,9 +128,11 @@ public class camera extends AppCompatActivity{
                             ByteArrayOutputStream stream = new ByteArrayOutputStream();
                             bit.compress(Bitmap.CompressFormat.PNG, 100, stream);
                             byte[] byteArray = stream.toByteArray();
-
+                            */
+                        Uri image_uri=data.getData();
+                        if (image_uri!=null){
                             Intent in1 = new Intent(this, generate.class);
-                            in1.putExtra("picture",byteArray);
+                            in1.putExtra("picture",image_uri);
                             startActivity(in1);
                         }
                     } catch (Exception e) {

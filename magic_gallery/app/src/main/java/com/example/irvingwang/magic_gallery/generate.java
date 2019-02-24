@@ -28,6 +28,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,7 +43,7 @@ public class generate extends AppCompatActivity {
     //add client class
     private static final String TAG = "generate";
     public  static  final int PICTURE_SAVED = 1;
-
+    public  static  final int PICTURE_LOAD = 2;
     ProgressDialog progressDialog;
 
     ImageClient Client;
@@ -52,7 +53,7 @@ public class generate extends AppCompatActivity {
     ImageButton save;
     ImageButton back_to_pic;
     ImageView pic;
-    byte[] data;
+    Uri data;
 
 
     Bitmap original;
@@ -72,11 +73,26 @@ public class generate extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         Intent intent=getIntent();
+        /*
         data=intent.getByteArrayExtra ("picture");
         original=BitmapFactory.decodeByteArray(data,0,data.length);
-        pic=(ImageView)findViewById(R.id.imageView);
-        pic.setImageBitmap(original);
-        pic.setAdjustViewBounds(true);
+        */
+        data=intent.getData();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    original= BitmapFactory.decodeStream(getContentResolver().openInputStream(data));
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        progressDialog=new ProgressDialog(generate.this);
+        progressDialog.setTitle("saving the picture");
+        progressDialog.setMessage("saving....");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
     }
 
     @Override
@@ -84,11 +100,6 @@ public class generate extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.inpaint);
         Intent intent=getIntent();
-        data=intent.getByteArrayExtra ("picture");
-        original=BitmapFactory.decodeByteArray(data,0,data.length);
-        pic=(ImageView)findViewById(R.id.imageView);
-        pic.setImageBitmap(original);
-        pic.setAdjustViewBounds(true);
        init();
     }
 
@@ -188,6 +199,11 @@ public class generate extends AppCompatActivity {
                     Intent intent=new Intent(generate.this,camera.class);
                     startActivity(intent);
                     break;
+                case PICTURE_LOAD:
+                    progressDialog.dismiss();
+                    pic=(ImageView)findViewById(R.id.imageView);
+                    pic.setImageBitmap(original);
+                    pic.setAdjustViewBounds(true);
                 default:
                     break;
             }
@@ -218,7 +234,7 @@ public class generate extends AppCompatActivity {
             }
         }).start();
         progressDialog=new ProgressDialog(generate.this);
-        progressDialog.setTitle("saveing the picture");
+        progressDialog.setTitle("saving the picture");
         progressDialog.setMessage("saving....");
         progressDialog.setCancelable(false);
         progressDialog.show();
