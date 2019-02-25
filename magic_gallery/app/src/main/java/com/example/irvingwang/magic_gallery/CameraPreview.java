@@ -14,8 +14,9 @@ import static android.content.ContentValues.TAG;
 public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback {
     private SurfaceHolder mHolder;
     private Camera mCamera;
+    private camerafocus focus;
 
-    public CameraPreview(Context context, Camera camera) {
+    public CameraPreview(Context context, final Camera camera) {
         super(context);
         mCamera = camera;
 
@@ -25,6 +26,17 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         mHolder.addCallback(this);
         // deprecated setting, but required on Android versions prior to 3.0
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
+        focus = new camerafocus() {
+            @Override
+            public void onFocusBegin(float x, float y) {
+                camera.
+            }
+
+            @Override
+            public void onFocusEnd() {
+
+            }
+        };
     }
 
     public void surfaceCreated(SurfaceHolder holder) {

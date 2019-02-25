@@ -17,6 +17,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -76,6 +77,14 @@ public class camera extends AppCompatActivity{
         mPreview=new CameraPreview(this,mcamera);
         FrameLayout preview=(FrameLayout)findViewById(R.id.preview);
         preview.addView(mPreview);
+
+        mPreview.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                //在这里实现对焦
+                return false;
+            }
+        });
 
         capture=(ImageButton)findViewById(R.id.capture);
         album=(ImageButton)findViewById(R.id.album);

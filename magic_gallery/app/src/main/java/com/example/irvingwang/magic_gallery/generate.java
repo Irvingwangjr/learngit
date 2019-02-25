@@ -1,5 +1,6 @@
 package com.example.irvingwang.magic_gallery;
 
+import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -44,12 +45,14 @@ public class generate extends AppCompatActivity {
     private static final String TAG = "generate";
     public  static  final int PICTURE_SAVED = 1;
     public  static  final int PICTURE_LOAD = 2;
+    public static final int LABLE_RETURN =3;
     ProgressDialog progressDialog;
 
     ImageClient Client;
     int mode=0;
     FloatingActionButton left;
     FloatingActionButton right;
+    FloatingActionButton compare;
     ImageButton save;
     ImageButton back_to_pic;
     ImageView pic;
@@ -68,6 +71,35 @@ public class generate extends AppCompatActivity {
     String[] type_list={"aaa","bbb","ccc","ddd","eeee","ffff"};
     int[] clicked_record;
     MotionEventCompat motionEventCompat;
+
+    @SuppressLint("HandlerLeak")
+    private Handler handler=new Handler(){
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what){
+                case PICTURE_SAVED:
+                    progressDialog.dismiss();
+                    Intent intent=new Intent(generate.this,camera.class);
+                    startActivity(intent);
+                    break;
+                case PICTURE_LOAD:
+                    progressDialog.dismiss();
+                    pic=(ImageView)findViewById(R.id.imageView);
+                    pic.setImageBitmap(original);
+                    pic.setAdjustViewBounds(true);
+                    break;
+                case LABLE_RETURN:
+                    progressDialog.dismiss();
+                    for (int i=0;i<=type_list.length-1;i++){
+                        label.addTab(label.newTab());
+                        label.getTabAt(i).setText(type_list[i]);
+                        //IF YOU WANT TO SET THE PIC :USE SETTEXT.SETICON
+                    }
+                default:
+                    break;
+            }
+        }
+    };
 
     @Override
     protected void onStart() {
@@ -109,6 +141,7 @@ public class generate extends AppCompatActivity {
         save=(ImageButton)findViewById(R.id.save);
         back_to_pic=(ImageButton)findViewById(R.id.back_to_pic);
         left=(FloatingActionButton)findViewById(R.id.floatingActionButton);
+
         left.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
@@ -131,12 +164,8 @@ public class generate extends AppCompatActivity {
                 save_image();
             }
         });
-        for (int i=0;i<=type_list.length-1;i++){
-            label.addTab(label.newTab());
-            label.getTabAt(i).setText(type_list[i]);
-            //IF YOU WANT TO SET THE PIC :USE SETTEXT.SETICON
-        }
-
+        label.setVisibility(View.INVISIBLE);
+        label.addTab(label.newTab());
         label.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -190,25 +219,6 @@ public class generate extends AppCompatActivity {
     }
 
 
-    private Handler handler=new Handler(){
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what){
-                case PICTURE_SAVED:
-                    progressDialog.dismiss();
-                    Intent intent=new Intent(generate.this,camera.class);
-                    startActivity(intent);
-                    break;
-                case PICTURE_LOAD:
-                    progressDialog.dismiss();
-                    pic=(ImageView)findViewById(R.id.imageView);
-                    pic.setImageBitmap(original);
-                    pic.setAdjustViewBounds(true);
-                default:
-                    break;
-            }
-        }
-    };
 
     String currentPhotoPath;
     private void save_image(){
