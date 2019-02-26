@@ -29,7 +29,6 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         focus = new camerafocus() {
             @Override
             public void onFocusBegin(float x, float y) {
-                camera.
             }
 
             @Override

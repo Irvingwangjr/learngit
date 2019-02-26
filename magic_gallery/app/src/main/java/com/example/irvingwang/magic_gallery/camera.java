@@ -10,7 +10,9 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
+import android.icu.text.SimpleDateFormat;
 import android.net.Uri;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -28,6 +30,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Date;
 
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
 
@@ -39,23 +42,59 @@ public class camera extends AppCompatActivity{
     ImageButton capture;
     ImageButton album;
     Bitmap temp;
+
+
+    String currentPhotoPath;
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+            timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        }
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        // Save a file: path for use with ACTION_VIEW intents
+        currentPhotoPath = image.getAbsolutePath();
+        return image;
+    }
     Camera.PictureCallback mPicture = new Camera.PictureCallback() {
 
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
-                Camera.Parameters parameters=camera.getParameters();
-                int width=parameters.getPreviewSize().width;
-                int height=parameters.getPreviewSize().height;
-                mcamera.release();
-                Bitmap bit = BitmapFactory.decodeByteArray(data,0,data.length);
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                bit.compress(Bitmap.CompressFormat.PNG, 100, stream);
-                byte[] byteArray = stream.toByteArray();
-                Intent intent=new Intent(camera.this,generate.class);
-                intent.putExtra("picture",byteArray);
-                startActivity(intent);
+            mcamera.release();
+            File pictureFile = null;
+            try {
+                pictureFile = createImageFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (pictureFile == null) {
+                Log.d(TAG, "Error creating media file, check storage permissions");
+                return;
+            }
+
+            try {
+                FileOutputStream fos = new FileOutputStream(pictureFile);
+                fos.write(data);
+                fos.close();
+            } catch (FileNotFoundException e) {
+                Log.d(TAG, "File not found: " + e.getMessage());
+            } catch (IOException e) {
+                Log.d(TAG, "Error accessing file: " + e.getMessage());
+            }
+            Uri contentUri = Uri.fromFile(pictureFile);
+            Intent intent = new Intent(camera.this, generate.class);
+            intent.putExtra("picture", contentUri.toString());
+            startActivity(intent);
         }
     };
+
 
     @Override
     protected void onStart() {
@@ -120,6 +159,7 @@ public class camera extends AppCompatActivity{
         // 如果限制上传到服务器的图片类型时可以直接写如："image/jpeg 、 image/png等的类型" 所有类型则写 "image/*"
         intentToPickPic.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/jpeg");
         startActivityForResult(intentToPickPic, GALLARY_REQUEST_CODE);
+        Log.d(TAG,"open_start");
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -141,8 +181,9 @@ public class camera extends AppCompatActivity{
                         Uri image_uri=data.getData();
                         if (image_uri!=null){
                             Intent in1 = new Intent(this, generate.class);
-                            in1.putExtra("picture",image_uri);
+                            in1.putExtra("picture",image_uri.toString());
                             startActivity(in1);
+                            Log.d(TAG, "onActivityResult: start");
                         }
                     } catch (Exception e) {
                         e.printStackTrace();

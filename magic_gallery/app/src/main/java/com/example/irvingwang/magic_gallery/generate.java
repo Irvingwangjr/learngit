@@ -37,6 +37,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.EventListener;
 
+import static android.os.Environment.DIRECTORY_PICTURES;
+import static android.os.Environment.getExternalStoragePublicDirectory;
 import static android.widget.Toast.LENGTH_SHORT;
 import static android.widget.Toast.makeText;
 
@@ -68,7 +70,7 @@ public class generate extends AppCompatActivity {
     TabLayout label;
 
     String delete_label;
-    String[] type_list={"aaa","bbb","ccc","ddd","eeee","ffff"};
+    String[] type_list={"aaa"};
     int[] clicked_record;
     MotionEventCompat motionEventCompat;
 
@@ -83,6 +85,7 @@ public class generate extends AppCompatActivity {
                     startActivity(intent);
                     break;
                 case PICTURE_LOAD:
+                    cropped=original;
                     progressDialog.dismiss();
                     pic=(ImageView)findViewById(R.id.imageView);
                     pic.setImageBitmap(original);
@@ -90,11 +93,18 @@ public class generate extends AppCompatActivity {
                     break;
                 case LABLE_RETURN:
                     progressDialog.dismiss();
-                    for (int i=0;i<=type_list.length-1;i++){
+                    label.removeAllTabs();
+                    label.addTab(label.newTab());
+                    for (int i=1;i<=type_list.length;i++){
                         label.addTab(label.newTab());
-                        label.getTabAt(i).setText(type_list[i]);
+                        label.getTabAt(i).setText(type_list[i-1]);
                         //IF YOU WANT TO SET THE PIC :USE SETTEXT.SETICON
                     }
+                    if (type_list.length>=3)
+                        label.setTabMode(TabLayout.MODE_SCROLLABLE);
+                    else label.setTabMode(TabLayout.MODE_FIXED);
+                    label.setVisibility(View.VISIBLE);
+                    break;
                 default:
                     break;
             }
@@ -109,7 +119,9 @@ public class generate extends AppCompatActivity {
         data=intent.getByteArrayExtra ("picture");
         original=BitmapFactory.decodeByteArray(data,0,data.length);
         */
-        data=intent.getData();
+        data=Uri.parse(intent.getStringExtra("picture"));
+        if (data==null)
+            Log.d(TAG, "onStart: nulll\n\n\n\n");
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -118,11 +130,14 @@ public class generate extends AppCompatActivity {
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 }
+                Message message=new Message();
+                message.what=PICTURE_LOAD;
+                handler.sendMessage(message);
             }
         }).start();
         progressDialog=new ProgressDialog(generate.this);
-        progressDialog.setTitle("saving the picture");
-        progressDialog.setMessage("saving....");
+        progressDialog.setTitle("loading the picture");
+        progressDialog.setMessage("loading....");
         progressDialog.setCancelable(false);
         progressDialog.show();
     }
@@ -131,12 +146,13 @@ public class generate extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.inpaint);
-        Intent intent=getIntent();
-       init();
+        init();
+        Log.d(TAG, "onCreate: init");
     }
 
     private void init(){
         label=(TabLayout)findViewById(R.id.tabLayout);
+        pic=(ImageView)findViewById(R.id.imageView);
         menu=(TabLayout)findViewById(R.id.tabLayout2);
         save=(ImageButton)findViewById(R.id.save);
         back_to_pic=(ImageButton)findViewById(R.id.back_to_pic);
@@ -164,13 +180,30 @@ public class generate extends AppCompatActivity {
                 save_image();
             }
         });
-        label.setVisibility(View.INVISIBLE);
+        //label.setVisibility(View.INVISIBLE);
         label.addTab(label.newTab());
+        /*
         label.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 int i=(int)v.getTag();
                 delete_label=type_list[i];
+            }
+        });*/
+
+        label.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+
             }
         });
 
@@ -178,18 +211,90 @@ public class generate extends AppCompatActivity {
         menu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int i=(int)v.getTag();
+
+            }
+        });
+
+        menu.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                int i= tab.getPosition();
+                Log.d(TAG, "onTabSelected: "+Integer.toString(i));
                 switch (i){
                     case 0:{
                         mode=1;//reverse
+                        Message message= new Message();
+                        message.what=LABLE_RETURN;
+                        handler.sendMessage(message);
                         break;
                     }
                     case 1:{
                         mode=2;
+                        for (int i1 = 0; i1 < type_list.length-2; i1++) {
+                            type_list[i1]="a";
+                        }
+                        Message message= new Message();
+                        message.what=LABLE_RETURN;
+                        handler.sendMessage(message);
                         break;
                     }
                     case 2:{
                         pic.setImageBitmap(original);
+                        break;
+                    }
+
+                    case 3:{
+                        for (int i1 = 0; i1 < type_list.length; i1++) {
+                            type_list[i1]="a";
+                        }
+                        Message message= new Message();
+                        message.what=LABLE_RETURN;
+                        handler.sendMessage(message);
+                        break;
+                    }
+                }
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                int i=tab.getPosition();
+                Log.d(TAG, "unselect"+Integer.toString(i));
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+                int i= tab.getPosition();
+                Log.d(TAG, "onTabSelected: "+Integer.toString(i));
+                switch (i){
+                    case 0:{
+                        mode=1;//reverse
+                        Message message= new Message();
+                        message.what=LABLE_RETURN;
+                        handler.sendMessage(message);
+                        break;
+                    }
+                    case 1:{
+                        mode=2;
+                        for (int i1 = 0; i1 < type_list.length-2; i1++) {
+                            type_list[i1]="a";
+                        }
+                        Message message= new Message();
+                        message.what=LABLE_RETURN;
+                        handler.sendMessage(message);
+                        break;
+                    }
+                    case 2:{
+                        pic.setImageBitmap(original);
+                        break;
+                    }
+
+                    case 3:{
+                        for (int i1 = 0; i1 < type_list.length; i1++) {
+                            type_list[i1]="a";
+                        }
+                        Message message= new Message();
+                        message.what=LABLE_RETURN;
+                        handler.sendMessage(message);
                         break;
                     }
                 }
@@ -234,6 +339,7 @@ public class generate extends AppCompatActivity {
                     fos.close();
                     Message message= new Message();
                     message.what=PICTURE_SAVED;
+                    handler.sendMessage(message);
                     Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
                     Uri contentUri = Uri.fromFile(save_file);
                     mediaScanIntent.setData(contentUri);
@@ -259,7 +365,7 @@ public class generate extends AppCompatActivity {
             timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         }
         String imageFileName = "JPEG_" + timeStamp + "_";
-        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File storageDir =getExternalStoragePublicDirectory(DIRECTORY_PICTURES);
         File image = File.createTempFile(
                 imageFileName,  /* prefix */
                 ".jpg",         /* suffix */
