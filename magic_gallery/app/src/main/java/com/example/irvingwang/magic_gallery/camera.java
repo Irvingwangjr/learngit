@@ -30,7 +30,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
 
@@ -117,13 +119,6 @@ public class camera extends AppCompatActivity{
         FrameLayout preview=(FrameLayout)findViewById(R.id.preview);
         preview.addView(mPreview);
 
-        mPreview.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                //在这里实现对焦
-                return false;
-            }
-        });
 
         capture=(ImageButton)findViewById(R.id.capture);
         album=(ImageButton)findViewById(R.id.album);

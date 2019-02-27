@@ -27,6 +27,7 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.TabHost;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -48,6 +49,8 @@ public class generate extends AppCompatActivity {
     public  static  final int PICTURE_SAVED = 1;
     public  static  final int PICTURE_LOAD = 2;
     public static final int LABLE_RETURN =3;
+    public static final int RCNN_RETURN =4;
+    public static final int CROPPED_RETURN =5;
     ProgressDialog progressDialog;
 
     ImageClient Client;
@@ -64,6 +67,7 @@ public class generate extends AppCompatActivity {
     Bitmap original;
     Bitmap rcnn;
     Bitmap cropped;
+    Bitmap last_cropped;
 
 
     TabLayout menu;
@@ -86,7 +90,6 @@ public class generate extends AppCompatActivity {
                     break;
                 case PICTURE_LOAD:
                     cropped=original;
-                    progressDialog.dismiss();
                     pic=(ImageView)findViewById(R.id.imageView);
                     pic.setImageBitmap(original);
                     pic.setAdjustViewBounds(true);
@@ -105,11 +108,30 @@ public class generate extends AppCompatActivity {
                     else label.setTabMode(TabLayout.MODE_FIXED);
                     label.setVisibility(View.VISIBLE);
                     break;
+                case RCNN_RETURN:
+                    progressDialog.dismiss();
+                    pic.setImageBitmap(rcnn);
+                    break;
+                case CROPPED_RETURN:
+                    progressDialog.dismiss();
+                    pic.setImageBitmap(cropped);
+                    prepare_next_croppped();
+                    break;
                 default:
                     break;
             }
         }
     };
+
+    private void prepare_next_croppped(){
+        rcnn.recycle();
+        rcnn=null;
+        if(last_cropped==null){
+            last_cropped=original;
+        }
+        else last_cropped=cropped;
+        bitmap_init(cropped);
+    }
 
     @Override
     protected void onStart() {
@@ -120,26 +142,31 @@ public class generate extends AppCompatActivity {
         original=BitmapFactory.decodeByteArray(data,0,data.length);
         */
         data=Uri.parse(intent.getStringExtra("picture"));
+
         if (data==null)
             Log.d(TAG, "onStart: nulll\n\n\n\n");
+        Client = new ImageClient();
+        image_load(data);
+        bitmap_init(original);
+    }
+
+    private void image_load(final Uri data){
+        cropped=null;
+        rcnn=null;
+        last_cropped=original;
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    original= BitmapFactory.decodeStream(getContentResolver().openInputStream(data));
+                    original = BitmapFactory.decodeStream(getContentResolver().openInputStream(data));
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 }
-                Message message=new Message();
+                Message message = new Message();
                 message.what=PICTURE_LOAD;
                 handler.sendMessage(message);
             }
         }).start();
-        progressDialog=new ProgressDialog(generate.this);
-        progressDialog.setTitle("loading the picture");
-        progressDialog.setMessage("loading....");
-        progressDialog.setCancelable(false);
-        progressDialog.show();
     }
 
     @Override
@@ -148,6 +175,29 @@ public class generate extends AppCompatActivity {
         setContentView(R.layout.inpaint);
         init();
         Log.d(TAG, "onCreate: init");
+    }
+
+    private void bitmap_init(final Bitmap bitmap){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Client.CloseSocket();
+                    Client.ConnectToServer("10.128.204.17",6666);
+                    type_list=Client.SendRawImg(bitmap);
+                    Message message=new Message();
+                    message.what=LABLE_RETURN;
+                    handler.sendMessage(message);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+        progressDialog=new ProgressDialog(generate.this);
+        progressDialog.setTitle("loading the picture");
+        progressDialog.setMessage("loading....");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
     }
 
     private void init(){
@@ -182,6 +232,8 @@ public class generate extends AppCompatActivity {
         });
         //label.setVisibility(View.INVISIBLE);
         label.addTab(label.newTab());
+        label.getTabAt(0).setText("原图");
+        label.setVisibility(View.INVISIBLE);
         /*
         label.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -194,6 +246,24 @@ public class generate extends AppCompatActivity {
         label.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
+                final String i=tab.getText().toString();
+                if(tab.getPosition()!=0){
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Client.SendSelectedLable(i);
+                        }
+                    }).start();
+                    progressDialog=new ProgressDialog(generate.this);
+                    progressDialog.setTitle("rcnn the picture");
+                    progressDialog.setMessage("magic....");
+                    progressDialog.setCancelable(false);
+                    progressDialog.show();
+                }//点击原图的情况相当于重新开始
+                else{
+                    bitmap_init(original);
+                    pic.setImageBitmap(original);
+                }
             }
 
             @Override
@@ -203,17 +273,26 @@ public class generate extends AppCompatActivity {
 
             @Override
             public void onTabReselected(TabLayout.Tab tab) {
-
+                final String i= tab.getText().toString();
+                if(tab.getPosition()!=0){
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            rcnn=Client.SendSelectedLable(i);
+                            Message message= new Message();
+                            message.what=RCNN_RETURN;
+                            handler.sendMessage(message);
+                        }
+                    }).start();
+                    progressDialog=new ProgressDialog(generate.this);
+                    progressDialog.setTitle("rcnn the picture");
+                    progressDialog.setMessage("magic....");
+                    progressDialog.setCancelable(false);
+                    progressDialog.show();
+                }
             }
         });
 
-
-        menu.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
 
         menu.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -229,27 +308,25 @@ public class generate extends AppCompatActivity {
                         break;
                     }
                     case 1:{
-                        mode=2;
-                        for (int i1 = 0; i1 < type_list.length-2; i1++) {
-                            type_list[i1]="a";
-                        }
-                        Message message= new Message();
-                        message.what=LABLE_RETURN;
-                        handler.sendMessage(message);
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                cropped=Client.RecieveFinalImg();
+                                Message message= new Message();
+                                message.what=CROPPED_RETURN;
+                                handler.sendMessage(message);
+                            }
+                        }).start();
+                        progressDialog=new ProgressDialog(generate.this);
+                        progressDialog.setTitle("copping the object");
+                        progressDialog.setMessage("magic happening.....");
+                        progressDialog.setCancelable(false);
+                        progressDialog.show();
                         break;
                     }
                     case 2:{
-                        pic.setImageBitmap(original);
-                        break;
-                    }
-
-                    case 3:{
-                        for (int i1 = 0; i1 < type_list.length; i1++) {
-                            type_list[i1]="a";
-                        }
-                        Message message= new Message();
-                        message.what=LABLE_RETURN;
-                        handler.sendMessage(message);
+                        bitmap_init(last_cropped);
+                        pic.setImageBitmap(last_cropped);
                         break;
                     }
                 }
@@ -318,6 +395,17 @@ public class generate extends AppCompatActivity {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 onSingleTap(event);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Client.SendCoordinate(clicked_record);
+                    }
+                }).start();
+                progressDialog=new ProgressDialog(generate.this);
+                progressDialog.setTitle("rcnn the picture");
+                progressDialog.setMessage("magic....");
+                progressDialog.setCancelable(false);
+                progressDialog.show();
                 return false;
             }
         });

@@ -5,7 +5,8 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <uses-feature android:name="android.hardware.camera" />
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -17,11 +18,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
-        <activity android:name=".camera">
-        </activity>
+        <activity android:name=".camera"></activity>
         <activity android:name=".generate" />
-    <activity android:name=".GuideActivity">
-    </activity>
+        <activity android:name=".GuideActivity"></activity>
         <activity
             android:name=".WelcomeActivity"
             android:label="@string/title_activity_main"
@@ -32,6 +31,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".fragment_trying_main_activity"></activity>
     </application>
 
 </manifest>

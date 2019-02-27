@@ -1,13 +1,9 @@
 package com.example.irvingwang.magic_gallery;
-
-
-//write your package name here
-
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
-import android.widget.Toast;
+
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -16,6 +12,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 
 public class ImageClient {
     private static final String TAG = "ImageClient";
@@ -36,59 +33,66 @@ public class ImageClient {
             out = new DataOutputStream(socket.getOutputStream());
         }catch (UnknownHostException e){
             Log.e(TAG, "UnknowHostException");
-            e.printStackTrace();
+            Log.i(TAG,Log.getStackTraceString(e));
         }catch (IOException e){
             Log.e(TAG, "ConnectIOException");
-            e.printStackTrace();
+            Log.i(TAG,Log.getStackTraceString(e));
         }
     }
 
     /*
     函数名：SendRawImg
     功能:图像还原的第一步：发送原图给服务器
-    返回值：返回true表示服务器成功接收图片，否则发送失败
+    返回值：返回此图片中存在的labels
     注意：此函数会让运行它的线程挂起，直到此次通信完成，请在非GUI线程中使用此函数。
     */
-    public Boolean SendRawImg(Bitmap rawImg){
+    public String[] SendRawImg(Bitmap rawImg){
         try {
-            //发送数字1，表示现在处于图像还原第一步
+            //发送状态数字1
             out.writeInt(1);
 
             //发图片
             sendImgMsg(out,rawImg);
 
-            //收状态，判断是否成功
-            int success=in.readInt();
-            Log.e(TAG, "SendRawImg: success="+success);
+            //收标签数目
+            int LabelNum=in.readInt();
 
-            if(success>0)
-                return true;
+            //收标签
+            String[] labels=new String[LabelNum];
+            for(int i=0;i<LabelNum;i++){
+                labels[i]=in.readUTF();
+            }
+
+            return labels;
         }catch (SocketException e){
             Log.e(TAG, "SocketException");
-            e.printStackTrace();
+            Log.i(TAG,Log.getStackTraceString(e));
         }catch (IOException e){
             Log.e(TAG, "SendImgIOException");
-            e.printStackTrace();
+            Log.i(TAG,Log.getStackTraceString(e));
         }
-        return false;
+        return null;
     }
 
     /*
     函数名：SendCoordinate
     功能：图像还原的第二步，发送用户点击的坐标给服务器，服务器发回一张用户点击处物体被高亮的图片
+    发送格式：第一个数表示坐标个数，之后先发横坐标再发纵坐标
+        例如发送三个坐标 (1,2) (3,4) (5,6)
+        发送格式为 3 1 2 3 4 5 6
     返回值：服务器返回的图片，图片中用户点击处的物体被高亮
     注意：此函数会让运行它的线程挂起，直到此次通信完成，请在非GUI线程中使用此函数。
     */
-    public Bitmap SendCoordinate(final int x,final int y){
+    public Bitmap SendCoordinate(int[] PosLists){
         try {
             Log.e(TAG, "SendCoordinate: start" );
 
-            //发送数字2，表示现在处于图像还原第二步
+            //发送状态数字2
             out.writeInt(2);
 
             //发坐标
-            out.writeInt(x);
-            out.writeInt(y);
+            for(int i=0;i<PosLists.length;i++)
+                out.writeInt((int)PosLists[i]);
 
             //收图片
             Bitmap HighlightImg=getImgMsg(in);
@@ -96,10 +100,37 @@ public class ImageClient {
             return HighlightImg;
         }catch (SocketException e){
             Log.e(TAG, "SocketException");
-            e.printStackTrace();
+            Log.i(TAG,Log.getStackTraceString(e));
         }catch (IOException e){
             Log.e(TAG, "IOException");
-            e.printStackTrace();
+            Log.i(TAG,Log.getStackTraceString(e));
+        }
+        return null;
+    }
+
+    /*
+    函数名：SendSelectedLable
+    功能：发送label，受到一张所有lable类型的物品被高亮的图片
+    返回值：被高亮的图片
+    */
+    public Bitmap SendSelectedLable(String label){
+        try{
+            Log.e(TAG, "SendSelectedLable: start" );
+            //发状态字
+            out.writeInt(3);
+
+            //发送label
+            out.writeUTF(label);
+
+            //收图片
+            Bitmap HighlightImg=getImgMsg(in);
+            return HighlightImg;
+        }catch (SocketException e){
+            Log.e(TAG, "SocketException");
+            Log.i(TAG,Log.getStackTraceString(e));
+        }catch (IOException e){
+            Log.e(TAG, "IOException");
+            Log.i(TAG,Log.getStackTraceString(e));
         }
         return null;
     }
@@ -107,7 +138,7 @@ public class ImageClient {
 
     /*
     函数名：RecieveFinalImg
-    功能：图像还原的第三步，接收还原完成的图片
+    功能：图像还原的第三步，要求服务器还原图片，并接收
     返回值：被还原完成的图片
     注意：第三步的图像还原是基于第二步用户选择的物体进行的，即被抹掉的物体是第二步中用户选择的物体。
           此函数会让运行它的线程挂起，直到此次通信完成，请在非GUI线程中使用此函数
@@ -115,8 +146,8 @@ public class ImageClient {
     public Bitmap RecieveFinalImg(){
         try {
             Log.e(TAG, "RecieveFinalImg: start" );
-            //送数字3，表示现在处于图像还原第三步
-            out.writeInt(3);
+            //送状态数字4
+            out.writeInt(4);
 
             //接受最终的图片
             Bitmap FinalImg=getImgMsg(in);
@@ -124,10 +155,10 @@ public class ImageClient {
             return FinalImg;
         }catch (SocketException e){
             Log.e(TAG, "SocketException");
-            e.printStackTrace();
+            Log.i(TAG,Log.getStackTraceString(e));
         }catch (IOException e){
             Log.e(TAG, "IOException");
-            e.printStackTrace();
+            Log.i(TAG,Log.getStackTraceString(e));
         }
         return null;
     }
@@ -145,7 +176,7 @@ public class ImageClient {
             in.close();
             out.close();
         }catch (IOException e){
-            e.printStackTrace();
+            Log.i(TAG,Log.getStackTraceString(e));
         }
     }
 
@@ -172,4 +203,3 @@ public class ImageClient {
         return bitmap;
     }
 }
-
