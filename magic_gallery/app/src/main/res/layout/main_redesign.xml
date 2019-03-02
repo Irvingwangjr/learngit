@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/background_sky">
+
+
+    <android.support.design.widget.TabLayout
+        android:id="@+id/label"
+        style="@style/tabstyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginBottom="40dp">
+
+        <android.support.design.widget.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="原图" />
+
+        <android.support.design.widget.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Center" />
+
+    </android.support.design.widget.TabLayout>
+
+    <ImageButton
+        android:id="@+id/imageButton2"
+        android:layout_width="47dp"
+        android:layout_height="44dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="3dp"
+        android:layout_marginLeft="3dp"
+        android:layout_marginTop="10dp"
+        android:adjustViewBounds="true"
+        android:background="#00000000"
+        android:scaleType="centerCrop"
+        app:srcCompat="@drawable/back_to_choose" />
+
+    <ImageButton
+        android:id="@+id/imageButton3"
+        android:layout_width="47dp"
+        android:layout_height="44dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="150dp"
+        android:layout_marginLeft="150dp"
+        android:layout_marginTop="14dp"
+        android:adjustViewBounds="true"
+        android:background="#00000000"
+        android:scaleType="centerCrop"
+        app:srcCompat="@drawable/left" />
+
+    <ImageButton
+        android:id="@+id/imageButton4"
+        android:layout_width="53dp"
+        android:layout_height="42dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="211dp"
+        android:layout_marginLeft="211dp"
+        android:layout_marginTop="16dp"
+        android:adjustViewBounds="true"
+        android:background="#00000000"
+        android:scaleType="centerCrop"
+        app:srcCompat="@drawable/right" />
+
+    <ImageButton
+        android:id="@+id/imageButton5"
+        android:layout_width="52dp"
+        android:layout_height="49dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="341dp"
+        android:layout_marginLeft="341dp"
+        android:layout_marginTop="13dp"
+        android:adjustViewBounds="true"
+        android:background="#00000000"
+        android:scaleType="centerCrop"
+        app:srcCompat="@drawable/topleftcorner" />
+
+    <ImageButton
+        android:id="@+id/imageButton6"
+        android:layout_width="54dp"
+        android:layout_height="50dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="325dp"
+        android:layout_marginLeft="325dp"
+        android:layout_marginTop="76dp"
+        android:adjustViewBounds="false"
+        android:background="#00000000"
+        android:scaleType="centerInside"
+        app:srcCompat="@drawable/compare" />
+
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="match_parent"
+        android:layout_height="589dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginTop="66dp"
+        android:layout_marginEnd="0dp"
+        tools:srcCompat="@tools:sample/avatars" />
+
+    <android.support.design.widget.TabLayout
+        android:id="@+id/menu"
+        style="@style/tabstyle"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="0dp"
+        android:layout_marginLeft="0dp"
+        android:layout_marginBottom="0dp">
+
+        <android.support.design.widget.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="自动选取" />
+        <android.support.design.widget.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="裁剪" />
+    </android.support.design.widget.TabLayout>
+</RelativeLayout>

@@ -4,8 +4,9 @@
                 android:id="@+id/layoutWelcome"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@drawable/welcome"
+                android:background="@drawable/background_sky"
                 tools:context=".WelcomeActivity">
+
     <TextView
         android:id="@+id/to_Main"
         android:layout_width="268dp"
@@ -13,11 +14,23 @@
         android:layout_alignParentStart="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:layout_marginStart="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginTop="108dp"
+        android:layout_marginStart="69dp"
+        android:layout_marginLeft="69dp"
+        android:layout_marginTop="123dp"
         android:background="#0000"
-        android:text="Camera Magic\n@BUPU"
-        android:textColor="#FFFFFF"
+        android:gravity="center"
+        android:text="Magic Album"
+        android:textColor="@color/colorPrimaryDark"
         android:textSize="34dp" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="109dp"
+        android:layout_height="54dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="29dp"
+        android:gravity="center"
+        android:text="@bupt"
+        android:textColor="@color/green" />
 </RelativeLayout>
