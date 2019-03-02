@@ -74,8 +74,8 @@ public class generate extends AppCompatActivity {
     TabLayout label;
 
     String delete_label;
-    String[] type_list={"aaa"};
-    int[] clicked_record;
+    String[] type_list={"dog","people","bench"};
+    ArrayList<Integer> clicked_record;
     MotionEventCompat motionEventCompat;
 
     @SuppressLint("HandlerLeak")
@@ -90,20 +90,22 @@ public class generate extends AppCompatActivity {
                     break;
                 case PICTURE_LOAD:
                     cropped=original;
+                    clicked_record.clear();
                     pic=(ImageView)findViewById(R.id.imageView);
                     pic.setImageBitmap(original);
                     pic.setAdjustViewBounds(true);
+                    bitmap_init(original);
                     break;
                 case LABLE_RETURN:
                     progressDialog.dismiss();
-                    label.removeAllTabs();
-                    label.addTab(label.newTab());
+                    int k=label.getTabCount()-1;
                     for (int i=1;i<=type_list.length;i++){
-                        label.addTab(label.newTab());
+                        if(i>=k)
+                            label.addTab(label.newTab());
                         label.getTabAt(i).setText(type_list[i-1]);
                         //IF YOU WANT TO SET THE PIC :USE SETTEXT.SETICON
                     }
-                    if (type_list.length>=3)
+                    if (type_list.length>4)
                         label.setTabMode(TabLayout.MODE_SCROLLABLE);
                     else label.setTabMode(TabLayout.MODE_FIXED);
                     label.setVisibility(View.VISIBLE);
@@ -125,6 +127,7 @@ public class generate extends AppCompatActivity {
 
     private void prepare_next_croppped(){
         rcnn.recycle();
+        clicked_record.clear();
         rcnn=null;
         if(last_cropped==null){
             last_cropped=original;
@@ -147,7 +150,6 @@ public class generate extends AppCompatActivity {
             Log.d(TAG, "onStart: nulll\n\n\n\n");
         Client = new ImageClient();
         image_load(data);
-        bitmap_init(original);
     }
 
     private void image_load(final Uri data){
@@ -174,6 +176,7 @@ public class generate extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.inpaint);
         init();
+        clicked_record= new ArrayList<Integer>();
         Log.d(TAG, "onCreate: init");
     }
 
@@ -182,8 +185,7 @@ public class generate extends AppCompatActivity {
             @Override
             public void run() {
                 try {
-                    Client.CloseSocket();
-                    Client.ConnectToServer("10.128.204.17",6666);
+                    Client.ConnectToServer("10.108.105.17",6666);
                     type_list=Client.SendRawImg(bitmap);
                     Message message=new Message();
                     message.what=LABLE_RETURN;
@@ -201,12 +203,12 @@ public class generate extends AppCompatActivity {
     }
 
     private void init(){
-        label=(TabLayout)findViewById(R.id.tabLayout);
+        label=(TabLayout)findViewById(R.id.label);
         pic=(ImageView)findViewById(R.id.imageView);
-        menu=(TabLayout)findViewById(R.id.tabLayout2);
+        menu=(TabLayout)findViewById(R.id.menu);
         save=(ImageButton)findViewById(R.id.save);
         back_to_pic=(ImageButton)findViewById(R.id.back_to_pic);
-        left=(FloatingActionButton)findViewById(R.id.floatingActionButton);
+        left=(FloatingActionButton)findViewById(R.id.floatingActionButton2);
 
         left.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -246,12 +248,16 @@ public class generate extends AppCompatActivity {
         label.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
+
                 final String i=tab.getText().toString();
                 if(tab.getPosition()!=0){
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            Client.SendSelectedLable(i);
+                            rcnn=Client.SendSelectedLable(i);
+                            Message message= new Message();
+                            message.what=RCNN_RETURN;
+                            handler.sendMessage(message);
                         }
                     }).start();
                     progressDialog=new ProgressDialog(generate.this);
@@ -398,7 +404,10 @@ public class generate extends AppCompatActivity {
                 new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        Client.SendCoordinate(clicked_record);
+                        rcnn=Client.SendCoordinate(clicked_record);
+                        Message message= new Message();
+                        message.what=RCNN_RETURN;
+                        handler.sendMessage(message);
                     }
                 }).start();
                 progressDialog=new ProgressDialog(generate.this);
@@ -482,8 +491,9 @@ public class generate extends AppCompatActivity {
         inverseMatrix.mapPoints(dst, new float[]{x, y});
         dstX = (int) dst[0];
         dstY = (int) dst[1];
-        clicked_record[clicked_record.length]=dstX;
-        clicked_record[clicked_record.length]=dstY;
+        clicked_record.add(dstX);
+        clicked_record.add(dstY);
+        clicked_record.add(0,clicked_record.size()/2);
         String a="x="+String.valueOf(dstX)+"   y="+String.valueOf(dstY);
         // 判断dstX, dstY在Bitmap上的位置即可
     }

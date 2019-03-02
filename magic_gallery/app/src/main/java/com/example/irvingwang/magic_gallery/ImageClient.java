@@ -83,7 +83,7 @@ public class ImageClient {
     返回值：服务器返回的图片，图片中用户点击处的物体被高亮
     注意：此函数会让运行它的线程挂起，直到此次通信完成，请在非GUI线程中使用此函数。
     */
-    public Bitmap SendCoordinate(int[] PosLists){
+    public Bitmap SendCoordinate(ArrayList<Integer> PosLists){
         try {
             Log.e(TAG, "SendCoordinate: start" );
 
@@ -91,8 +91,8 @@ public class ImageClient {
             out.writeInt(2);
 
             //发坐标
-            for(int i=0;i<PosLists.length;i++)
-                out.writeInt((int)PosLists[i]);
+            for(int i=0;i<PosLists.size();i++)
+                out.writeInt((int)PosLists.get(i));
 
             //收图片
             Bitmap HighlightImg=getImgMsg(in);
