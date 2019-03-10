@@ -90,7 +90,6 @@ public class generate extends AppCompatActivity {
                     break;
                 case PICTURE_LOAD:
                     cropped=original;
-                    clicked_record.clear();
                     pic=(ImageView)findViewById(R.id.imageView);
                     pic.setImageBitmap(original);
                     pic.setAdjustViewBounds(true);
@@ -145,7 +144,9 @@ public class generate extends AppCompatActivity {
         original=BitmapFactory.decodeByteArray(data,0,data.length);
         */
         data=Uri.parse(intent.getStringExtra("picture"));
+        clicked_record= new ArrayList<Integer>();
 
+        Log.d(TAG, "onStart: "+clicked_record.toString());
         if (data==null)
             Log.d(TAG, "onStart: nulll\n\n\n\n");
         Client = new ImageClient();
@@ -176,16 +177,18 @@ public class generate extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.inpaint);
         init();
-        clicked_record= new ArrayList<Integer>();
+
         Log.d(TAG, "onCreate: init");
     }
 
     private void bitmap_init(final Bitmap bitmap){
+        clicked_record.clear();
+        clicked_record.add(0,123);
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    Client.ConnectToServer("10.108.105.17",6666);
+                    Client.ConnectToServer("10.108.107.54",6666);
                     type_list=Client.SendRawImg(bitmap);
                     Message message=new Message();
                     message.what=LABLE_RETURN;
@@ -491,8 +494,10 @@ public class generate extends AppCompatActivity {
         inverseMatrix.mapPoints(dst, new float[]{x, y});
         dstX = (int) dst[0];
         dstY = (int) dst[1];
+        Log.d(TAG, "onSingleTap: "+clicked_record.toString());
         clicked_record.add(dstX);
         clicked_record.add(dstY);
+        clicked_record.remove(0);
         clicked_record.add(0,clicked_record.size()/2);
         String a="x="+String.valueOf(dstX)+"   y="+String.valueOf(dstY);
         // 判断dstX, dstY在Bitmap上的位置即可
